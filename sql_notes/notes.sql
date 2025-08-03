@@ -1,6 +1,7 @@
--- 1️⃣ Create the notes table
+-- 1️⃣ Create the notes table with title
 create table if not exists notes (
     id bigint generated always as identity primary key,
+    title text not null,
     body text not null,
     created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

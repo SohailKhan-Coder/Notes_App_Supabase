@@ -1,61 +1,84 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:notes_app_supabase/details_view.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key});
+class HomeView extends StatefulWidget {
+  const HomeView({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<HomeView> createState() => _HomeViewState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _HomeViewState extends State<HomeView> {
+  // Real-time notes stream
   final _noteStream =
-      Supabase.instance.client.from('notes').stream(primaryKey: ['id']);
+  Supabase.instance.client.from('notes').stream(primaryKey: ['id']);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
+        title: const Text("Notes Keeper App"),
+      ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _noteStream,
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return const Center(
-              child: CircularProgressIndicator(color: Colors.indigo),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
+
           final notes = snapshot.data!;
+          if (notes.isEmpty) {
+            return const Center(child: Text("No notes available"));
+          }
           return ListView.builder(
             itemCount: notes.length,
             itemBuilder: (context, index) {
               final note = notes[index];
 
-              // Parse the date from Supabase (if exists)
-              String dateText = "";
+              String formattedDate = "";
               if (note['created_at'] != null) {
                 final date = DateTime.parse(note['created_at']);
-                dateText = DateFormat('dd MMM yyyy, hh:mm a').format(date);
+                formattedDate =
+                    DateFormat('dd MMM yyyy, hh:mm a').format(date);
               }
 
               return Card(
-                elevation: 10,
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 child: ListTile(
-                  title: Text(note['body'],style: TextStyle(color: Colors.indigo),),
-                  subtitle: Text(dateText), // Show date here
+                  title: Text(note['title'] ?? '',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 18)),
+                  subtitle: Text(
+                    "${note['body'] ?? ''}\n$formattedDate",
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  isThreeLine: true,
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // Edit Button
                       IconButton(
-                        icon: Icon(Icons.edit, color: Colors.blue),
+                        icon: const Icon(Icons.edit, color: Colors.blue),
                         onPressed: () {
-                          _showEditDialog(note['id'], note['body']);
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => DetailsView(
+                                noteId: note['id'],
+                                initialTitle: note['title'],
+                                initialBody: note['body'],
+                              ),
+                            ),
+                          );
                         },
                       ),
                       // Delete Button
                       IconButton(
-                        icon: Icon(Icons.delete, color: Colors.red),
+                        icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () async {
                           await Supabase.instance.client
                               .from('notes')
@@ -73,74 +96,14 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          _showAddDialog();
+          // Navigate to DetailsView to add a new note
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const DetailsView(),
+            ),
+          );
         },
-        child: Icon(Icons.add),
-      ),
-    );
-  }
-
-  void _showAddDialog() {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Add Note"),
-        content: TextFormField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(hintText: "Enter your note..."),
-        ),
-        actions: [
-          TextButton(
-            child: Text("Cancel"),
-            onPressed: () => Navigator.pop(context),
-          ),
-          ElevatedButton(
-            child: Text("Add"),
-            onPressed: () async {
-              if (controller.text.isNotEmpty) {
-                await Supabase.instance.client.from("notes").insert({
-                  'body': controller.text,
-                  'created_at': DateTime.now().toIso8601String(),
-                });
-                Navigator.pop(context);
-              }
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showEditDialog(int id, String oldValue) {
-    final controller = TextEditingController(text: oldValue);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Edit Note"),
-        content: TextFormField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(hintText: "Enter your note..."),
-        ),
-        actions: [
-          TextButton(
-            child: Text("Cancel"),
-            onPressed: () => Navigator.pop(context),
-          ),
-          ElevatedButton(
-            child: Text("Save"),
-            onPressed: () async {
-              if (controller.text.isNotEmpty) {
-                await Supabase.instance.client
-                    .from("notes")
-                    .update({'body': controller.text}).eq('id', id);
-                Navigator.pop(context);
-              }
-            },
-          ),
-        ],
+        child: const Icon(Icons.add),
       ),
     );
   }
