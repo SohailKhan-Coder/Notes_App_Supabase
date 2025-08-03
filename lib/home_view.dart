@@ -19,9 +19,6 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        centerTitle: true,
-        backgroundColor: Colors.indigo,
-        foregroundColor: Colors.white,
         title: const Text("Notes Keeper App"),
       ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
@@ -99,11 +96,11 @@ class _HomeViewState extends State<HomeView> {
           // Navigate to DetailsView to add a new note
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (context) => const DetailsView(),
+              builder: (context) => DetailsView(),
             ),
           );
         },
-        child: const Icon(Icons.add),
+        child: Icon(Icons.add),
       ),
     );
   }

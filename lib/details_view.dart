@@ -30,9 +30,6 @@ class _DetailsViewState extends State<DetailsView> {
     return Scaffold(
       appBar: AppBar(
         title: Text(isEditing ? "Edit Note" : "Add Note"),
-        backgroundColor: Colors.indigo,
-        foregroundColor: Colors.white,
-        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -51,7 +48,7 @@ class _DetailsViewState extends State<DetailsView> {
             // Body Field
             TextFormField(
               controller: _bodyController,
-              maxLines: 5,
+              maxLines: 10,
               decoration: InputDecoration(
                 hintText: "Enter your note...",
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -63,36 +60,45 @@ class _DetailsViewState extends State<DetailsView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text("Cancel"),
+                SizedBox(
+                  height: 50,
+                  width: 150,
+                  child: ElevatedButton(
+
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text("Cancel"),
+                  ),
                 ),
-                ElevatedButton(
-                  onPressed: () async {
-                    final title = _titleController.text.trim();
-                    final body = _bodyController.text.trim();
-                    if (title.isEmpty || body.isEmpty) return;
+                SizedBox(
+                  height: 50,
+                  width: 150,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final title = _titleController.text.trim();
+                      final body = _bodyController.text.trim();
+                      if (title.isEmpty || body.isEmpty) return;
 
-                    final supabase = Supabase.instance.client;
+                      final supabase = Supabase.instance.client;
 
-                    if (isEditing) {
-                      // Update existing note
-                      await supabase
-                          .from('notes')
-                          .update({'title': title, 'body': body})
-                          .eq('id', widget.noteId!);
-                    } else {
-                      // Add new note
-                      await supabase.from('notes').insert({
-                        'title': title,
-                        'body': body,
-                        'created_at': DateTime.now().toIso8601String(),
-                      });
-                    }
+                      if (isEditing) {
+                        // Update existing note
+                        await supabase
+                            .from('notes')
+                            .update({'title': title, 'body': body})
+                            .eq('id', widget.noteId!);
+                      } else {
+                        // Add new note
+                        await supabase.from('notes').insert({
+                          'title': title,
+                          'body': body,
+                          'created_at': DateTime.now().toIso8601String(),
+                        });
+                      }
 
-                    Navigator.of(context).pop();
-                  },
-                  child: Text(isEditing ? "Update" : "Save"),
+                      Navigator.of(context).pop();
+                    },
+                    child: Text(isEditing ? "Update" : "Save"),
+                  ),
                 ),
               ],
             ),
